@@ -92,7 +92,7 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('gameState').innerText = data.state;
         document.getElementById('communityCards').innerText = data.communityCards.join(", ");
         document.getElementById('potSize').innerText = data.potSize;
-
+    
         // Update players' list
         let playersHTML = '';
         data.players.forEach(player => {
@@ -103,9 +103,12 @@ document.addEventListener("DOMContentLoaded", function() {
     
             let handDisplay = player.cards && player.cards.length ? player.cards.join(', ') : 'No hand yet';
     
+            // Check if it's the current player's turn to act
+            let turnSymbol = (data.currentPlayerTurn && data.currentPlayerTurn == player._id) ? '<span class="turn-symbol">→</span>' : '';
+    
             playersHTML += `
             <div class="player" data-id="${player._id}">
-                <span>${player.name} (Chips: ${player.chips}, Hand: ${handDisplay})</span>
+                <span>${turnSymbol} ${player.name} (Chips: ${player.chips}, Hand: ${handDisplay})</span>
                 <button onclick="playerAction('fold', '${player._id}')">Fold</button>
                 <button onclick="playerAction('check', '${player._id}')">Check</button>
                 <button onclick="playerAction('call', '${player._id}')">Call</button>
@@ -116,6 +119,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
         document.getElementById('playersList').innerHTML = playersHTML;
     }
+    
 
     // This is to ensure the above functions are available globally for the HTML buttons to use
     window.createGame = createGame;

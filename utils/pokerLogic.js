@@ -66,7 +66,7 @@ function dealCards(deck, players) {
 
 function advanceGame(game) {
     // Check if all players have acted
-    const allPlayersActed = game.players.every(p => p.hasActed);
+    if (!shouldAdvanceGame(game)) return;
     
     // Check if all but one player have folded
     const remainingPlayers = game.players.filter(p => !p.folded);
@@ -143,5 +143,11 @@ function determineWinner(game) {
     }
     game.pot = 0;
 }
+function shouldAdvanceGame(game) {
+    const allPlayersActed = game.players.every(p => p.hasActed);
+    const allPlayersChecked = game.players.every(p => p.lastAction === "check");
+    return allPlayersActed || allPlayersChecked;
+}
 
-module.exports = {shuffleDeck, dealCards , advanceGame, initializeGame };
+
+module.exports = {shuffleDeck, dealCards , advanceGame, initializeGame, dealCommunityCards };

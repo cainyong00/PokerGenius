@@ -69,7 +69,6 @@ router.post('/:id/start', async (req, res) => {
         const deck = shuffleDeck();
         await dealCards(deck, game.players);
         console.log(game.players[0].cards)
-        await game.save();
         game.state = "pre-flop";
 
         // Reset the hasActed flag for all players for the new round

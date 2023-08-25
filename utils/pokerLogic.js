@@ -56,6 +56,7 @@ function dealCards(deck, players) {
     for (let player of players) {
         if (Array.isArray(player.cards)) {
             player.cards.push(deck.pop(), deck.pop());
+            player.save();
         } else {
             console.error(`Player ${player._id} does not have a cards property initialized.`);
         }

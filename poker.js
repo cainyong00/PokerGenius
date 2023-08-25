@@ -43,8 +43,9 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .then(response => response.json())
         .then(data => {
-            console.log(data);
+            setTimeout(fetchGameState, 2000);
             fetchGameState(); // Fetch the game state after starting
+            console.log(data);
         })
         .catch(error => {
             console.error('Error starting game:', error);
@@ -100,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 return; // Skip to the next iteration
             }
     
-            let handDisplay = player.hand && player.hand.length ? player.hand.join(', ') : 'No hand yet';
+            let handDisplay = player.cards && player.cards.length ? player.cards.join(', ') : 'No hand yet';
     
             playersHTML += `
             <div class="player" data-id="${player._id}">

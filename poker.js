@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", function() {
         // Update general game info
         document.getElementById('gameState').innerText = data.state;
         document.getElementById('communityCards').innerText = data.communityCards.join(", ");
-        document.getElementById('potSize').innerText = data.potSize;
+        document.getElementById('potSize').innerText = data.potAmount;
     
         // Update players' list
         let playersHTML = '';

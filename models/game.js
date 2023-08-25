@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const gameSchema = new mongoose.Schema({
     state: String,
     communityCards: Array,
-    pot: Number,
+    potAmount: Number,
     currentTurn: mongoose.Types.ObjectId,  // Refers to Player ID
     players: [{
         type: mongoose.Schema.Types.ObjectId,

@@ -1,0 +1,2 @@
+node_modules/poker-evaluator/data/HandRanks.dat filter=lfs diff=lfs merge=lfs -text
+*.dat filter=lfs diff=lfs merge=lfs -text

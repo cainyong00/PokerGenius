@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        button {
+            margin: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        .player {
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <button onclick="createGame()">Create Game</button>
+    <input type="text" id="gameId" placeholder="Game ID">
+    <button onclick="joinGame()">Join Game</button>
+    <button onclick="startGame()">Start Game</button>
+    <button onclick="fetchGameState()">Refresh Game State</button>
+
+    <div id="gameInfo">
+        <table>
+            <thead>
+                <tr>
+                    <th>Game State</th>
+                    <th>Community Cards</th>
+                    <th>Pot Size</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td id="gameState"></td>
+                    <td id="communityCards"></td>
+                    <td id="potSize"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Players</h2>
+        <div id="playersList"></div>
+    </div>
+    <script src="poker.js"></script>
+</body>
+</html>

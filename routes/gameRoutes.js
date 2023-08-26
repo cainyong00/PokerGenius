@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Game = require('../models/game');
 const Player = require('../models/player');
-const { shuffleDeck, dealCards, dealCommunityCards } = require('../utils/pokerLogic');
+const { shuffleDeck, dealCards, dealCommunityCards, shouldAdvanceGame, moveToNextPlayer } = require('../utils/pokerLogic');
 
 router.post('/create', async (req, res) => {
     try {
@@ -76,7 +76,8 @@ router.post('/:id/start', async (req, res) => {
 router.post('/:gameId/player/:playerId/action', async (req, res) => {
     try {
         const game = await Game.findById(req.params.gameId).populate('players');
-        const player = await Player.findById(req.params.playerId);
+        let player = await Player.findById(req.params.playerId);
+        const { advanceGame } = require('../utils/pokerLogic');
 
         if (!game) return res.status(404).json({ message: "Game not found" });
         if (!player) return res.status(404).json({ message: "Player not found" });
@@ -84,55 +85,67 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
         const action = req.body.action;
         const amount = req.body.amount;
 
-        if (action === "bet" && amount > player.chips) return res.status(400).json({ error: 'Insufficient chips' });
-        if (game.currentPlayerTurn.toString() !== req.params.playerId) return res.status(400).json({ error: 'It is not your turn.' });
-        if (action === "check" && game.currentBet > player.currentBet) return res.status(400).json({ error: 'Cannot check. You need to call or raise.' });
+        if (action === "bet" && amount > player.chips) {
+            return res.status(400).json({ error: 'Insufficient chips' });
+        }
 
-        switch (action) {
-            case "fold":
-                player.folded = true;
-                break;
-            case "check":
+        if (game.currentPlayerTurn.toString() !== req.params.playerId) {
+            return res.status(400).json({ error: 'It is not your turn.' });
+        }
+
+        if (action === "check" && game.currentBet > player.currentBet) {
+            return res.status(400).json({ error: 'Cannot check. You need to call or raise.' });
+        }
+
+        switch(action) {
+            case "bet":
+            case "raise":
+                player.chips -= amount;
+                player.currentBet += amount;
+                game.pot += amount;
+                game.currentBet = player.currentBet;
                 break;
             case "call":
                 const callAmount = game.currentBet - player.currentBet;
                 player.chips -= callAmount;
                 player.currentBet += callAmount;
+                game.pot += callAmount;
                 break;
-            case "bet":
-            case "raise":
-                player.chips -= amount;
-                player.currentBet += amount;
-                game.currentBet = player.currentBet;
+            case "fold":
+                player.folded = true;
                 break;
+            case "check":
+                // Do nothing
+                break;
+            default:
+                return res.status(400).json({ error: "Invalid action" });
         }
 
         player.hasActed = true;
         player.lastAction = action;
-
-        if (player.chips === 0) player.isAllIn = true;
-        await player.save();
-
+        
         const indexToUpdate = game.players.findIndex(p => p._id.toString() === player._id.toString());
-        if (indexToUpdate !== -1) game.players[indexToUpdate] = player;
-
-        const currentPlayerIndex = game.players.map(p => p._id.toString()).indexOf(player._id.toString());
-        const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
-        game.currentPlayerTurn = game.players[nextPlayerIndex]._id;
-
-        const allPlayersActed = game.players.every(p => p.hasActed);
-        const allPlayersChecked = game.players.every(p => p.hasActed && p.lastAction === "check");
-
-        if (allPlayersActed || allPlayersChecked) {
-            if (game.state === "pre-flop") {
-                game.state = "flop";
-                dealCommunityCards(game, 3);
-                game.players.forEach(p => p.hasActed = false);
-            }
-            await game.save();
-        } else {
-            await game.save();
+        if (indexToUpdate !== -1) {
+            game.players[indexToUpdate] = player;
         }
+        
+        // Determine the next player's turn, skipping folded players and players who have already acted
+        let nextPlayerIndex = (game.players.map(p => p._id.toString()).indexOf(player._id.toString()) + 1) % game.players.length;
+        let cycleCount = 0; // Counter to avoid infinite loop
+        while ((game.players[nextPlayerIndex].folded || game.players[nextPlayerIndex].hasActed) && cycleCount < game.players.length) {
+            nextPlayerIndex = (nextPlayerIndex + 1) % game.players.length;
+            cycleCount++;
+        }
+        
+        // Now, only advance the game if all players have acted or checked
+        await player.save();
+        player = await Player.findById(req.params.playerId);
+
+        await game.save();
+        await advanceGame(game);
+
+        // Save the updated game state and the player state
+        
 
         res.json(game);
     } catch (err) {
@@ -140,6 +153,9 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
+
+
 
 router.get('/:id', async (req, res) => {
     try {

@@ -1,4 +1,8 @@
 const PokerEvaluator = require("poker-evaluator");
+const Game = require('../models/game');
+const Player = require('../models/player');
+
+
 function initializeGame(players) {
     if (!players || players.length < 2) {
         throw new Error("At least two players are required to start the game.");
@@ -64,51 +68,48 @@ function dealCards(deck, players) {
     
 }
 
-function advanceGame(game) {
-    // Check if all players have acted
-    if (!shouldAdvanceGame(game)) return;
-    
-    // Check if all but one player have folded
-    const remainingPlayers = game.players.filter(p => !p.folded);
-    
-    if (allPlayersActed || remainingPlayers.length === 1) {
+async function advanceGame(game) {
+    if (shouldAdvanceGame(game)) {
         switch(game.state) {
             case "pre-deal":
                 game.state = "pre-flop";
+                resetTurnPointer(game);
                 break;
             case "pre-flop":
                 game.state = "flop";
                 dealCommunityCards(game, 3);  // Deal 3 cards for flop
+                resetTurnPointer(game);
                 break;
             case "flop":
                 game.state = "turn";
                 dealCommunityCards(game, 1);  // Deal 1 card for turn
+                resetTurnPointer(game);
                 break;
             case "turn":
                 game.state = "river";
                 dealCommunityCards(game, 1);  // Deal 1 card for river
+                resetTurnPointer(game);
                 break;
             case "river":
                 game.state = "end";
                 determineWinner(game);
+                resetTurnPointer(game);
                 break;
         }
+        // Reset players' hasActed for the next round since we've advanced states
+        game.players.forEach(p => {
+            p.hasActed = false;
+            p.lastAction = "none";
+            p.save()
+        });
+    } else {
+        // If we're not advancing the game, move to the next player
+        moveToNextPlayer(game);
     }
-
-    // If there's only one player left, they win, advance to end state
-    if (remainingPlayers.length === 1) {
-        game.state = "end";
-        // You might want to assign the pot to the remaining player
-        // remainingPlayers[0].chips += game.pot;
-        // game.pot = 0;
-    }
-
-    // Reset players' hasActed for next round if we've advanced states
-    if (allPlayersActed) {
-        game.players.forEach(p => p.hasActed = false);
-    }
+    await game.save(); // Only one save operation for the game
+    game = await Game.findById(game._id).populate('players');
+    
 }
-
 
 function dealCommunityCards(game, count) {
     const deck = shuffleDeck();  // Use an improved method that retains deck state across rounds
@@ -145,9 +146,47 @@ function determineWinner(game) {
 }
 function shouldAdvanceGame(game) {
     const allPlayersActed = game.players.every(p => p.hasActed);
-    const allPlayersChecked = game.players.every(p => p.lastAction === "check");
-    return allPlayersActed || allPlayersChecked;
+    const allPlayersChecked = game.players.filter(p => !p.folded).every(p => p.lastAction === "check");
+    return allPlayersActed && allPlayersChecked;
 }
 
 
-module.exports = {shuffleDeck, dealCards , advanceGame, initializeGame, dealCommunityCards };
+
+
+function resetTurnPointer(game) {
+    console.log("Before reset:", game.currentPlayerTurn);
+    if (!game.players[0].folded) {
+        game.currentPlayerTurn = game.players[0]._id;
+        console.log("Reset to Player 1");
+    } else {
+        for (let i = 1; i < game.players.length; i++) {
+            if (!game.players[i].folded) {
+                game.currentPlayerTurn = game.players[i]._id;
+                console.log("Reset to Player", i + 1);
+                break;
+            }
+        }
+    }
+
+    console.log("After reset:", game.currentPlayerTurn);
+}
+
+function moveToNextPlayer(game) {
+    const currentPlayerIndex = game.players.findIndex(p => p._id.toString() === game.currentPlayerTurn.toString());
+    let nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
+
+    while(game.players[nextPlayerIndex].folded && nextPlayerIndex !== currentPlayerIndex) {
+        nextPlayerIndex = (nextPlayerIndex + 1) % game.players.length;
+    }
+
+    if (!game.players[nextPlayerIndex].folded) {
+        game.currentPlayerTurn = game.players[nextPlayerIndex]._id;
+    } else {
+        // All players have folded except one, handle accordingly
+        game.currentPlayerTurn = null;
+    }
+}
+
+
+
+module.exports = { shuffleDeck, dealCards, advanceGame, initializeGame, dealCommunityCards, resetTurnPointer, shouldAdvanceGame, moveToNextPlayer };

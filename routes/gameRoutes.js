@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Game = require('../models/game');
 const Player = require('../models/player');
-const { shuffleDeck, dealCards, dealCommunityCards, shouldAdvanceGame, moveToNextPlayer } = require('../utils/pokerLogic');
+const { shuffleDeck, dealCards, dealCommunityCards, shouldAdvanceGame, moveToNextPlayer, getRemainingPlayers } = require('../utils/pokerLogic');
 
 router.post('/create', async (req, res) => {
     try {
@@ -12,6 +12,7 @@ router.post('/create', async (req, res) => {
             potAmount: 0,
             players: [],
         });
+        
 
         await game.save();
         res.json(game);
@@ -35,8 +36,12 @@ router.post('/:id/join', async (req, res) => {
             currentBet: 0,
             folded: false,
             hasActed: false,
-            lastAction: "none"
+            lastAction: "none",
+            isDealer: false
         });
+        if (game.players.length === 0) {
+            player.isDealer = true;
+        }
 
         await player.save();
 
@@ -57,7 +62,26 @@ router.post('/:id/start', async (req, res) => {
         if (!game || game.players.length < 2) return res.status(400).json({ message: "Game not found or not enough players" });
 
         if (game.state !== "pre-deal") return res.status(400).json({ message: "Game already in progress" });
-
+        
+        const dealerIndex = game.players.findIndex(p => p.isDealer);
+        const smallBlindIndex = (dealerIndex + 1) % game.players.length;
+        const bigBlindIndex = (dealerIndex + 2) % game.players.length;
+        
+        const smallBlindAmount = 10;
+        const bigBlindAmount = 20;
+        
+        game.players[smallBlindIndex].chips -= smallBlindAmount;
+        game.players[smallBlindIndex].currentBet = smallBlindAmount;
+        game.potAmount += smallBlindAmount;
+        
+        game.players[bigBlindIndex].chips -= bigBlindAmount;
+        game.players[bigBlindIndex].currentBet = bigBlindAmount;
+        game.potAmount += bigBlindAmount;
+        
+        // Rotate the dealer button to the next player (to be used for the next hand)
+        game.players[dealerIndex].isDealer = false;
+        game.players[smallBlindIndex].isDealer = true;
+        
         const deck = shuffleDeck();
         await dealCards(deck, game.players);
         game.state = "pre-flop";
@@ -96,7 +120,20 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
         if (action === "check" && game.currentBet > player.currentBet) {
             return res.status(400).json({ error: 'Cannot check. You need to call or raise.' });
         }
-
+        
+        if (action === "fold") {
+            player.folded = true;
+            const remainingPlayers = getRemainingPlayers(game);  // use the utility function
+            if (remainingPlayers.length === 1) {
+                // Award the pot to the remaining player
+                remainingPlayers[0].chips += game.pot;
+                game.pot = 0;
+                game.state = "end";
+                await game.save();
+                res.json(game);
+                return;
+            }
+        }
         switch(action) {
             case "bet":
             case "raise":

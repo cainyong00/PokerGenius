@@ -12,7 +12,8 @@ const playerSchema = new mongoose.Schema({
         type: String,
         enum: ['fold', 'check', 'call', 'bet', 'raise', 'none'],
         default: 'none'
-    }
+    },
+    isDealer: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model('Player', playerSchema);

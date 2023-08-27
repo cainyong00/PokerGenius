@@ -69,6 +69,16 @@ function dealCards(deck, players) {
 }
 
 async function advanceGame(game) {
+    const remainingPlayers = getRemainingPlayers(game);
+    if (remainingPlayers.length === 1) {
+        // Award the pot to the remaining player
+        remainingPlayers[0].chips += game.pot;
+        game.pot = 0;
+        console.log(`${remainingPlayers[0].name} won because everyone else folded.`);
+        game.state = "end";
+        await game.save();
+        return;
+    }
     if (shouldAdvanceGame(game)) {
         switch(game.state) {
             case "pre-deal":
@@ -138,11 +148,12 @@ function determineWinner(game) {
     // Now, award the pot to the winner
     if (winner) {
         console.log(`${winner.name} won with a pot of ${game.pot}`);
-        winner.chips += game.pot;
+        winner.chips += game.potAmount;
     } else {
         console.log("No winner determined.");
     }
-    game.pot = 0;
+    game.potAmount = 0;
+
 }
 function shouldAdvanceGame(game) {
     const allPlayersActed = game.players.every(p => p.hasActed);
@@ -187,6 +198,12 @@ function moveToNextPlayer(game) {
     }
 }
 
+function getRemainingPlayers(game) {
+    const remainingPlayers = game.players.filter(p => !p.folded);
+    return remainingPlayers;
+}
 
 
-module.exports = { shuffleDeck, dealCards, advanceGame, initializeGame, dealCommunityCards, resetTurnPointer, shouldAdvanceGame, moveToNextPlayer };
+
+
+module.exports = { shuffleDeck, dealCards, advanceGame, initializeGame, dealCommunityCards, resetTurnPointer, shouldAdvanceGame, moveToNextPlayer, getRemainingPlayers };

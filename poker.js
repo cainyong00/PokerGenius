@@ -43,7 +43,6 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .then(response => response.json())
         .then(data => {
-            setTimeout(fetchGameState, 2000);
             fetchGameState(); // Fetch the game state after starting
             console.log(data);
         })
@@ -88,6 +87,12 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function updateGameDisplay(data) {
+        console.log('Full Game Data:', data);
+        if (data.players && data.players[0]) {
+            console.log('Cards for first player:', data.players[0].cards);
+        }
+        
+
         // Update general game info
         document.getElementById('gameState').innerText = data.state;
         document.getElementById('communityCards').innerText = data.communityCards.join(", ");
@@ -100,7 +105,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.error('Received invalid player data:', player);
                 return; // Skip to the next iteration
             }
-    
+
             let handDisplay = player.cards && player.cards.length ? player.cards.join(', ') : 'No hand yet';
     
             // Check if it's the current player's turn to act

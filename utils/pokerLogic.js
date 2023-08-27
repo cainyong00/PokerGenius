@@ -60,23 +60,22 @@ function dealCards(deck, players) {
     for (let player of players) {
         if (Array.isArray(player.cards)) {
             player.cards.push(deck.pop(), deck.pop());
-            player.save();
         } else {
             console.error(`Player ${player._id} does not have a cards property initialized.`);
         }
     }
-    
+    return players;
 }
 
 async function advanceGame(game) {
     const remainingPlayers = getRemainingPlayers(game);
+
     if (remainingPlayers.length === 1) {
         // Award the pot to the remaining player
         remainingPlayers[0].chips += game.pot;
         game.pot = 0;
         console.log(`${remainingPlayers[0].name} won because everyone else folded.`);
         game.state = "end";
-        await game.save();
         return;
     }
     if (shouldAdvanceGame(game)) {
@@ -84,11 +83,13 @@ async function advanceGame(game) {
             case "pre-deal":
                 game.state = "pre-flop";
                 resetTurnPointer(game);
+
                 break;
             case "pre-flop":
                 game.state = "flop";
                 dealCommunityCards(game, 3);  // Deal 3 cards for flop
                 resetTurnPointer(game);
+
                 break;
             case "flop":
                 game.state = "turn";
@@ -101,24 +102,19 @@ async function advanceGame(game) {
                 resetTurnPointer(game);
                 break;
             case "river":
-                game.state = "end";
                 determineWinner(game);
-                resetTurnPointer(game);
                 break;
         }
         // Reset players' hasActed for the next round since we've advanced states
         game.players.forEach(p => {
             p.hasActed = false;
             p.lastAction = "none";
-            p.save()
         });
     } else {
         // If we're not advancing the game, move to the next player
-        moveToNextPlayer(game);
+        game = moveToNextPlayer(game);
     }
-    await game.save(); // Only one save operation for the game
-    game = await Game.findById(game._id).populate('players');
-    
+    return game;
 }
 
 function dealCommunityCards(game, count) {
@@ -128,7 +124,7 @@ function dealCommunityCards(game, count) {
     }
 }
 
-function determineWinner(game) {
+async function determineWinner(game) {
     let winningHandValue = 0;
     let winner = null;
 
@@ -149,15 +145,17 @@ function determineWinner(game) {
     if (winner) {
         console.log(`${winner.name} won with a pot of ${game.pot}`);
         winner.chips += game.potAmount;
+        game = await resetAndStartGame(game);
     } else {
         console.log("No winner determined.");
     }
-    game.potAmount = 0;
+
 
 }
 function shouldAdvanceGame(game) {
     const allPlayersActed = game.players.every(p => p.hasActed);
     const allPlayersChecked = game.players.filter(p => !p.folded).every(p => p.lastAction === "check");
+
     return allPlayersActed && allPlayersChecked;
 }
 
@@ -165,7 +163,6 @@ function shouldAdvanceGame(game) {
 
 
 function resetTurnPointer(game) {
-    console.log("Before reset:", game.currentPlayerTurn);
     if (!game.players[0].folded) {
         game.currentPlayerTurn = game.players[0]._id;
         console.log("Reset to Player 1");
@@ -179,7 +176,6 @@ function resetTurnPointer(game) {
         }
     }
 
-    console.log("After reset:", game.currentPlayerTurn);
 }
 
 function moveToNextPlayer(game) {
@@ -196,6 +192,7 @@ function moveToNextPlayer(game) {
         // All players have folded except one, handle accordingly
         game.currentPlayerTurn = null;
     }
+    return game;
 }
 
 function getRemainingPlayers(game) {
@@ -203,7 +200,50 @@ function getRemainingPlayers(game) {
     return remainingPlayers;
 }
 
+const resetAndStartGame = async (game) => {
+    // 1. Get index of the current dealer, small blind, and big blind
+    const dealerIndex = game.players.findIndex(p => p.isDealer);
+    const smallBlindIndex = (dealerIndex + 1) % game.players.length;
+    const bigBlindIndex = (dealerIndex + 2) % game.players.length;
+
+    // 3. Deal cards to players before deducting blinds
+    const deck = shuffleDeck();
+    game.players = await dealCards(deck, game.players);
+
+    // Deduct blinds and set the current bet for the small and big blinds
+    const smallBlindAmount = 10;
+    const bigBlindAmount = 20;
+
+    game.players[smallBlindIndex].chips -= smallBlindAmount;
+    game.players[smallBlindIndex].currentBet = smallBlindAmount;
+    game.potAmount = smallBlindAmount + bigBlindAmount;  // Set potAmount instead of adding
+
+    game.players[bigBlindIndex].chips -= bigBlindAmount;
+    game.players[bigBlindIndex].currentBet = bigBlindAmount;
+
+    // Rotate the dealer button to the next player
+    game.players[dealerIndex].isDealer = false;
+    game.players[smallBlindIndex].isDealer = true;
+
+    // 1. Reset the current player's turn to be the player immediately after the big blind
+    const nextPlayerIndex = (bigBlindIndex + 1) % game.players.length;
+    game.currentPlayerTurn = game.players[nextPlayerIndex]._id;
+
+    // Reset player actions and states for the new hand
+    game.players.forEach(p => {
+        p.hasActed = false;
+        p.lastAction = "none";
+        p.folded = false;  // Ensure all players are marked as not folded for the new game
+        p.isAllIn = false; // Reset all-in status for each player
+    });
+
+    game.state = "pre-flop";
+
+
+    return game;
+};
 
 
 
-module.exports = { shuffleDeck, dealCards, advanceGame, initializeGame, dealCommunityCards, resetTurnPointer, shouldAdvanceGame, moveToNextPlayer, getRemainingPlayers };
+
+module.exports = { shuffleDeck, dealCards, advanceGame, initializeGame, dealCommunityCards, resetTurnPointer, shouldAdvanceGame, moveToNextPlayer, getRemainingPlayers, resetAndStartGame };

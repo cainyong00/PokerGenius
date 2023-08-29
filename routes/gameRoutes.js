@@ -13,7 +13,7 @@ router.post('/create', async (req, res) => {
             state: "pre-deal",
             communityCards: [],
             potAmount: 0,
-            players: [],
+            players: []
         });
         
 
@@ -67,7 +67,7 @@ router.post('/:id/start', async (req, res) => {
         if (game.state !== "pre-deal") return res.status(400).json({ message: "Game already in progress" });
 
         game = await resetAndStartGame(game);  // Use the helper function to start the game
-        console.log(game.players[0].cards);
+        
 
         for (let player of game.players) {
             await player.save();
@@ -95,7 +95,7 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
         if (!player) return res.status(404).json({ message: "Player not found" });
 
         const action = req.body.action;
-        const amount = req.body.amount;
+        const amount = parseInt(req.body.amount, 10);
 
         if (action === "bet" && amount > player.chips) {
             return res.status(400).json({ error: 'Insufficient chips' });
@@ -114,8 +114,8 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
             const remainingPlayers = getRemainingPlayers(game);  // use the utility function
             if (remainingPlayers.length === 1) {
                 // Award the pot to the remaining player
-                remainingPlayers[0].chips += game.pot;
-                game.pot = 0;
+                remainingPlayers[0].chips += game.potAmount;
+                game.potAmount = 0;
                 game.state = "end";
                 await game.save();
                 res.json(game);
@@ -127,14 +127,17 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
             case "raise":
                 player.chips -= amount;
                 player.currentBet += amount;
-                game.pot += amount;
-                game.currentBet = player.currentBet;
+                game.potAmount += amount;
+                game.highestBet = player.currentBet;
                 break;
             case "call":
-                const callAmount = game.currentBet - player.currentBet;
+                const callAmount = parseInt(game.highestBet, 10) - parseInt(player.currentBet, 10);
                 player.chips -= callAmount;
                 player.currentBet += callAmount;
-                game.pot += callAmount;
+                console.log(game.potAmount);
+                console.log(game.highestBet);
+                console.log(player.currentBet);
+                game.potAmount += callAmount;
                 break;
             case "fold":
                 player.folded = true;
@@ -148,10 +151,6 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
 
         player.hasActed = true;
         player.lastAction = action;
-        
-
-
-      
         
         const indexToUpdate = game.players.findIndex(p => p._id.toString() === player._id.toString());
         if (indexToUpdate !== -1) {

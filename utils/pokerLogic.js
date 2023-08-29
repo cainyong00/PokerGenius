@@ -242,6 +242,7 @@ const resetAndStartGame = async (game) => {
 
     game.state = "pre-flop";
     game.communityCards = [];
+    game.highestBet = bigBlindAmount;
 
 
     return game;

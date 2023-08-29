@@ -143,7 +143,7 @@ async function determineWinner(game) {
 
     // Now, award the pot to the winner
     if (winner) {
-        console.log(`${winner.name} won with a pot of ${game.pot}`);
+        console.log(`${winner.name} won with a pot of ${game.potAmount}`);
         winner.chips += game.potAmount;
         game = await resetAndStartGame(game);
     } else {
@@ -208,6 +208,9 @@ const resetAndStartGame = async (game) => {
 
     // 3. Deal cards to players before deducting blinds
     const deck = shuffleDeck();
+    game.players.forEach(p => {
+        p.cards = [];
+    });
     game.players = await dealCards(deck, game.players);
 
     // Deduct blinds and set the current bet for the small and big blinds
@@ -238,6 +241,7 @@ const resetAndStartGame = async (game) => {
     });
 
     game.state = "pre-flop";
+    game.communityCards = [];
 
 
     return game;

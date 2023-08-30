@@ -153,11 +153,34 @@ async function determineWinner(game) {
 
 }
 function shouldAdvanceGame(game) {
-    const allPlayersActed = game.players.every(p => p.hasActed);
-    const allPlayersChecked = game.players.filter(p => !p.folded).every(p => p.lastAction === "check");
+    // Filter out players that have folded or gone all-in, as they don't need to act.
+    const playersExpectedToAct = game.players.filter(p => !p.folded && !p.isAllIn);
 
-    return allPlayersActed && allPlayersChecked;
+    // Check if all the players who are supposed to act have indeed acted.
+    const allExpectedPlayersActed = playersExpectedToAct.every(p => p.hasActed);
+    if (!allExpectedPlayersActed) {
+        return false;
+    }
+
+    // Filter out players that have folded since they aren't considered in the next steps.
+    const activePlayers = game.players.filter(p => !p.folded);
+
+    // Check if all players have either checked or are all in.
+    const allCheckedOrAllIn = activePlayers.every(p => p.lastAction === "check" || p.isAllIn);
+    if (allCheckedOrAllIn) {
+        return true;
+    }
+
+    // Check if all players have matched the highest bet.
+    const allMatchedHighestBet = activePlayers.every(p => p.currentBet === game.highestBet || p.isAllIn);
+    if (allMatchedHighestBet) {
+        return true;
+    }
+
+    // If none of the conditions are met, we do not advance the game.
+    return false;
 }
+
 
 
 

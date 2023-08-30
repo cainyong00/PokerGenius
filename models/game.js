@@ -6,6 +6,7 @@ const gameSchema = new mongoose.Schema({
     potAmount: Number,
     currentTurn: mongoose.Types.ObjectId,  // Refers to Player ID
     highestBet: Number,
+    deck: Array,
     players: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Player'

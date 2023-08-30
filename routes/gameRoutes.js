@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Game = require('../models/game');
 const Player = require('../models/player');
-const { shuffleDeck, dealCards, dealCommunityCards, shouldAdvanceGame, moveToNextPlayer, getRemainingPlayers, resetAndStartGame } = require('../utils/pokerLogic');
+const { resetAndStartGame } = require('../utils/pokerLogic');
 const player = require('../models/player');
 const mongoose = require('mongoose');
 

@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function() {
         // Update players' list
         let playersHTML = '';
         data.players.forEach(player => {
-            if (!player || !player.name || !player.chips) {
+            if (!player || !player.name) {
                 console.error('Received invalid player data:', player);
                 return; // Skip to the next iteration
             }

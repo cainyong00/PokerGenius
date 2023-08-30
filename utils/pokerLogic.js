@@ -3,39 +3,7 @@ const Game = require('../models/game');
 const Player = require('../models/player');
 
 
-function initializeGame(players) {
-    if (!players || players.length < 2) {
-        throw new Error("At least two players are required to start the game.");
-    }
 
-    // Assuming a standard deck function that shuffles and returns a new deck
-    const deck = shuffleDeck();
-
-    // Distribute 2 cards to each player
-    players.forEach(player => {
-        player.cards = [deck.pop(), deck.pop()];
-    });
-
-    // Set initial community cards as empty
-    const communityCards = [];
-
-    // Set initial pot amount (assuming starting pot is 0)
-    const pot = 0;
-
-    // Assuming each player starts with a default chip count
-    players.forEach(player => {
-        player.chips = 1000; // example starting chip amount
-    });
-
-    // Initialize other game variables if needed, e.g., blinds, dealer position, etc.
-
-    return {
-        players,
-        communityCards,
-        pot,
-        deck
-    };
-}
 function shuffleDeck() {
     const suits = ['s', 'd', 'c', 'h'];  // spades, diamonds, clubs, hearts
     const values = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']; // Note that 10 is represented by 'T'
@@ -64,7 +32,7 @@ function dealCards(deck, players) {
             console.error(`Player ${player._id} does not have a cards property initialized.`);
         }
     }
-    return players;
+    return deck, players;
 }
 
 async function advanceGame(game) {
@@ -81,7 +49,6 @@ async function advanceGame(game) {
             case "pre-deal":
                 game.state = "pre-flop";
                 resetTurnPointer(game);
-
                 break;
             case "pre-flop":
                 game.state = "flop";
@@ -116,7 +83,7 @@ async function advanceGame(game) {
 }
 
 function dealCommunityCards(game, count) {
-    const deck = shuffleDeck();  // Use an improved method that retains deck state across rounds
+    const deck = game.deck;  // Use an improved method that retains deck state across rounds
     for (let i = 0; i < count; i++) {
         game.communityCards.push(deck.pop());
     }
@@ -232,8 +199,9 @@ const resetAndStartGame = async (game) => {
     game.players.forEach(p => {
         p.cards = [];
     });
-    game.players = await dealCards(deck, game.players);
-
+    
+    deck, game.players = await dealCards(deck, game.players);
+    game.deck = deck;
     // Deduct blinds and set the current bet for the small and big blinds
     const smallBlindAmount = 10;
     const bigBlindAmount = 20;
@@ -272,4 +240,4 @@ const resetAndStartGame = async (game) => {
 
 
 
-module.exports = { shuffleDeck, dealCards, advanceGame, initializeGame, dealCommunityCards, resetTurnPointer, shouldAdvanceGame, moveToNextPlayer, getRemainingPlayers, resetAndStartGame };
+module.exports = { shuffleDeck, dealCards, advanceGame, dealCommunityCards, resetTurnPointer, shouldAdvanceGame, moveToNextPlayer, getRemainingPlayers, resetAndStartGame };

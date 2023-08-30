@@ -68,15 +68,13 @@ function dealCards(deck, players) {
 }
 
 async function advanceGame(game) {
-    const remainingPlayers = getRemainingPlayers(game);
-
+    let remainingPlayers = await getRemainingPlayers(game);  // use the utility function
     if (remainingPlayers.length === 1) {
         // Award the pot to the remaining player
-        remainingPlayers[0].chips += game.pot;
-        game.pot = 0;
-        console.log(`${remainingPlayers[0].name} won because everyone else folded.`);
-        game.state = "end";
-        return;
+        remainingPlayers[0].chips += game.potAmount;
+        console.log(`${remainingPlayers[0].name} won with a pot of ${game.potAmount}`);
+        game = resetAndStartGame(game);
+        return game;
     }
     if (shouldAdvanceGame(game)) {
         switch(game.state) {

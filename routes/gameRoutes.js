@@ -105,23 +105,10 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
             return res.status(400).json({ error: 'It is not your turn.' });
         }
 
-        if (action === "check" && game.currentBet > player.currentBet) {
+        if (action === "check" && game.highestBet > player.currentBet) {
             return res.status(400).json({ error: 'Cannot check. You need to call or raise.' });
         }
         
-        if (action === "fold") {
-            player.folded = true;
-            const remainingPlayers = getRemainingPlayers(game);  // use the utility function
-            if (remainingPlayers.length === 1) {
-                // Award the pot to the remaining player
-                remainingPlayers[0].chips += game.potAmount;
-                game.potAmount = 0;
-                game.state = "end";
-                await game.save();
-                res.json(game);
-                return;
-            }
-        }
         switch(action) {
             case "bet":
             case "raise":

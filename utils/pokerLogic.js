@@ -88,32 +88,33 @@ function dealCommunityCards(game, count) {
 
 async function determineWinner(game) {
     let winningHandValue = 0;
-    let winner = null;
+    let winners = [];
 
     game.players.forEach(player => {
         const hand = player.cards.concat(game.communityCards);
-        
-        console.log("Evaluating hand:", hand); // This line will print the hand to the console
-
         const evaluation = PokerEvaluator.evalHand(hand);
         
         if (evaluation.value > winningHandValue) {
             winningHandValue = evaluation.value;
-            winner = player;
+            winners = [player];
+        } else if (evaluation.value === winningHandValue) {
+            winners.push(player);
         }
     });
 
-    // Now, award the pot to the winner
-    if (winner) {
-        console.log(`${winner.name} won with a pot of ${game.potAmount}`);
-        winner.chips += game.potAmount;
+    // Now, award the pot to the winners
+    if (winners.length) {
+        const splitAmount = game.potAmount / winners.length;
+        winners.forEach(winner => {
+            winner.chips += splitAmount;
+            console.log(`${winner.name} won a split pot of ${splitAmount}`);
+        });
         game = await resetAndStartGame(game);
     } else {
         console.log("No winner determined.");
     }
-
-
 }
+
 function shouldAdvanceGame(game) {
     // Filter out players that have folded or gone all-in, as they don't need to act.
     const playersExpectedToAct = game.players.filter(p => !p.folded && !p.isAllIn);

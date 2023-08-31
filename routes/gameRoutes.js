@@ -31,7 +31,10 @@ router.post('/:id/join', async (req, res) => {
         if (!game) return res.status(404).json({ message: "Game not found" });
 
         if (game.players.length >= 8) return res.status(400).json({ error: 'Game lobby is full.' });
-
+        if (!req.body.name || req.body.name.length == 0) {
+            return res.status(400).json({ error: 'invalid name' });
+        }
+        
         // Retrieve occupied positions
         const occupiedPositions = game.players.map(player => player.position);
 
@@ -108,6 +111,10 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
         const action = req.body.action;
         const amount = parseInt(req.body.amount, 10);
 
+        if (isNaN(amount) && (action === "bet" || action === "raise")) {
+            return res.status(400).json({ error: 'Invalid bet or raise amount' });
+        }
+
         if (action === "bet" && amount > player.chips) {
             return res.status(400).json({ error: 'Insufficient chips' });
         }
@@ -125,6 +132,10 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
         }
 
         if (action === "raise" && amount < (game.highestBet * 2)) {
+            console.log("TEST");
+            console.log(`Amount: ${amount}`);
+            console.log(`Highest Bet: ${game.highestBet}`);
+
             return res.status(400).json({ error: 'You need to raise at least twice the current highest bet' });
         }
 

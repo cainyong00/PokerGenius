@@ -46,12 +46,7 @@ async function advanceGame(game) {
     }
     if (shouldAdvanceGame(game)) {
         switch(game.state) {
-            case "pre-deal":
-                game.state = "pre-flop";
-                resetTurnPointer(game);
-                break;
             case "pre-flop":
-                
                 game.state = "flop";
                 dealCommunityCards(game, 3);  // Deal 3 cards for flop
                 resetTurnPointer(game);
@@ -75,6 +70,7 @@ async function advanceGame(game) {
         game.players.forEach(p => {
             p.hasActed = false;
             p.lastAction = "none";
+            p.highestBet = 0;
         });
     } else {
         // If we're not advancing the game, move to the next player

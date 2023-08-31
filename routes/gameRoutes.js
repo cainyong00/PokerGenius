@@ -119,6 +119,18 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
         if (action === "check" && game.highestBet > player.currentBet) {
             return res.status(400).json({ error: 'Cannot check. You need to call or raise.' });
         }
+
+        if (action === "bet" && game.highestBet > player.currentBet) {
+            return res.status(400).json({ error: 'Cannot bet. You need to call or raise.' });
+        }
+
+        if (action === "raise" && amount < (game.highestBet * 2)) {
+            return res.status(400).json({ error: 'You need to raise at least twice the current highest bet' });
+        }
+
+        if (action === "raise" && game.highestBet == 0 ) {
+            return res.status(400).json({ error: 'Cannot raise. You need to raise, check, or fold.' });
+        }
         
         switch(action) {
             case "bet":

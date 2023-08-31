@@ -201,6 +201,15 @@ function getRemainingPlayers(game) {
 }
 
 const resetAndStartGame = async (game) => {
+     // Remove players with 0 chips
+     game.players = game.players.filter(player => player.chips > 0);
+
+     // If there are not enough players to continue, the game can't proceed.
+     if (game.players.length < 2) {
+         // Here you might want to set some game state indicating the game has ended or similar logic
+         throw new Error('Not enough players to continue the game');
+     }
+     
     // 1. Get index of the current dealer, small blind, and big blind
     const dealerIndex = game.players.findIndex(p => p.isDealer);
     const smallBlindIndex = (dealerIndex + 2) % game.players.length;

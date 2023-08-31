@@ -14,6 +14,12 @@ const playerSchema = new mongoose.Schema({
         default: 'none'
     },
     isDealer: { type: Boolean, default: false },
+    position: { 
+        type: Number, 
+        min: 1, 
+        max: 8, 
+        required: true 
+    }
 });
 
 module.exports = mongoose.model('Player', playerSchema);

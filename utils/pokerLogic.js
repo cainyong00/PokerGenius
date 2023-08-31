@@ -51,6 +51,7 @@ async function advanceGame(game) {
                 resetTurnPointer(game);
                 break;
             case "pre-flop":
+                
                 game.state = "flop";
                 dealCommunityCards(game, 3);  // Deal 3 cards for flop
                 resetTurnPointer(game);
@@ -151,20 +152,34 @@ function shouldAdvanceGame(game) {
 
 
 function resetTurnPointer(game) {
-    if (!game.players[0].folded) {
-        game.currentPlayerTurn = game.players[0]._id;
-        console.log("Reset to Player 1");
+    // Get the position of the dealer
+    const dealerPosition = game.players.find(p => p.isDealer).position;
+
+    // Create an array of players ordered by their position
+    let orderedPlayers = game.players.slice().sort((a, b) => a.position - b.position);
+
+    // Find the player with position just after the dealer
+    const nextPosition = (dealerPosition % 8) + 1;
+    const nextPlayer = orderedPlayers.find(p => p.position === nextPosition && !p.folded);
+    
+    if (nextPlayer) {
+        game.currentPlayerTurn = nextPlayer._id;
+        console.log(`Reset to Player at position ${nextPlayer.position}`);
     } else {
-        for (let i = 1; i < game.players.length; i++) {
-            if (!game.players[i].folded) {
-                game.currentPlayerTurn = game.players[i]._id;
-                console.log("Reset to Player", i + 1);
+        for (let pos = nextPosition + 1; pos !== dealerPosition; pos = (pos % 8) + 1) {
+            const nextAvailablePlayer = orderedPlayers.find(p => p.position === pos && !p.folded);
+            if (nextAvailablePlayer) {
+                game.currentPlayerTurn = nextAvailablePlayer._id;
+                console.log(`Reset to Player at position ${nextAvailablePlayer.position}`);
                 break;
             }
         }
     }
 
+    return game;
 }
+
+
 
 function moveToNextPlayer(game) {
     const currentPlayerIndex = game.players.findIndex(p => p._id.toString() === game.currentPlayerTurn.toString());
@@ -191,8 +206,8 @@ function getRemainingPlayers(game) {
 const resetAndStartGame = async (game) => {
     // 1. Get index of the current dealer, small blind, and big blind
     const dealerIndex = game.players.findIndex(p => p.isDealer);
-    const smallBlindIndex = (dealerIndex + 1) % game.players.length;
-    const bigBlindIndex = (dealerIndex + 2) % game.players.length;
+    const smallBlindIndex = (dealerIndex + 2) % game.players.length;
+    const bigBlindIndex = (dealerIndex + 3) % game.players.length;
 
     // 3. Deal cards to players before deducting blinds
     const deck = shuffleDeck();
@@ -200,11 +215,19 @@ const resetAndStartGame = async (game) => {
         p.cards = [];
     });
     
+    // Rotate the dealer button to the next player
+    game.players[dealerIndex].isDealer = false;
+    game.players[smallBlindIndex].isDealer = true;
+
     deck, game.players = await dealCards(deck, game.players);
     game.deck = deck;
     // Deduct blinds and set the current bet for the small and big blinds
     const smallBlindAmount = 10;
     const bigBlindAmount = 20;
+
+    game.players.forEach(p => {
+        p.currentBet = 0;
+    });
 
     game.players[smallBlindIndex].chips -= smallBlindAmount;
     game.players[smallBlindIndex].currentBet = smallBlindAmount;
@@ -213,9 +236,7 @@ const resetAndStartGame = async (game) => {
     game.players[bigBlindIndex].chips -= bigBlindAmount;
     game.players[bigBlindIndex].currentBet = bigBlindAmount;
 
-    // Rotate the dealer button to the next player
-    game.players[dealerIndex].isDealer = false;
-    game.players[smallBlindIndex].isDealer = true;
+    
 
     // 1. Reset the current player's turn to be the player immediately after the big blind
     const nextPlayerIndex = (bigBlindIndex + 1) % game.players.length;
@@ -236,8 +257,54 @@ const resetAndStartGame = async (game) => {
 
     return game;
 };
+const initiateFirstGame = async (game) => {
+    // Assuming the first player is the dealer in the first game.
+    const dealerIndex = 0;
+    const smallBlindIndex = 1 % game.players.length;
+    const bigBlindIndex = 2 % game.players.length;
+
+    // 3. Deal cards to players before deducting blinds
+    const deck = shuffleDeck();
+    game.players.forEach(p => {
+        p.cards = [];
+    });
+    
+    // No need to rotate the dealer button since it's the first game.
+    
+    deck, game.players = await dealCards(deck, game.players);
+    game.deck = deck;
+    
+    // Deduct blinds and set the current bet for the small and big blinds
+    const smallBlindAmount = 10;
+    const bigBlindAmount = 20;
+
+    game.players[smallBlindIndex].chips -= smallBlindAmount;
+    game.players[smallBlindIndex].currentBet = smallBlindAmount;
+    game.potAmount = smallBlindAmount + bigBlindAmount;  // Set potAmount instead of adding
+
+    game.players[bigBlindIndex].chips -= bigBlindAmount;
+    game.players[bigBlindIndex].currentBet = bigBlindAmount;
+
+    // 1. Set the current player's turn to be the player immediately after the big blind
+    const nextPlayerIndex = (bigBlindIndex + 1) % game.players.length;
+    game.currentPlayerTurn = game.players[nextPlayerIndex]._id;
+
+    // Reset player actions and states for the new hand
+    game.players.forEach(p => {
+        p.hasActed = false;
+        p.lastAction = "none";
+        p.folded = false;  // Ensure all players are marked as not folded for the new game
+        p.isAllIn = false; // Reset all-in status for each player
+    });
+
+    game.state = "pre-flop";
+    game.communityCards = [];
+    game.highestBet = bigBlindAmount;
+
+    return game;
+};
 
 
 
 
-module.exports = { shuffleDeck, dealCards, advanceGame, dealCommunityCards, resetTurnPointer, shouldAdvanceGame, moveToNextPlayer, getRemainingPlayers, resetAndStartGame };
+module.exports = { shuffleDeck, dealCards, advanceGame, dealCommunityCards, resetTurnPointer, shouldAdvanceGame, moveToNextPlayer, getRemainingPlayers, resetAndStartGame, initiateFirstGame };

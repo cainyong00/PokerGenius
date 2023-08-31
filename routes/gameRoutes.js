@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Game = require('../models/game');
 const Player = require('../models/player');
-const { resetAndStartGame } = require('../utils/pokerLogic');
+const { resetAndStartGame, initiateFirstGame } = require('../utils/pokerLogic');
 const player = require('../models/player');
 const mongoose = require('mongoose');
 
@@ -27,10 +27,20 @@ router.post('/create', async (req, res) => {
 
 router.post('/:id/join', async (req, res) => {
     try {
-        const game = await Game.findById(req.params.id);
+        const game = await Game.findById(req.params.id).populate('players');
         if (!game) return res.status(404).json({ message: "Game not found" });
 
         if (game.players.length >= 8) return res.status(400).json({ error: 'Game lobby is full.' });
+
+        // Retrieve occupied positions
+        const occupiedPositions = game.players.map(player => player.position);
+
+
+        // Find the first unoccupied position from 1 to 8
+        let assignedPosition = 1;
+        while (occupiedPositions.includes(assignedPosition)) {
+            assignedPosition++;
+        }
 
         const player = new Player({
             name: req.body.name,
@@ -39,6 +49,7 @@ router.post('/:id/join', async (req, res) => {
             currentBet: 0,
             folded: false,
             hasActed: false,
+            position: assignedPosition,
             lastAction: "none",
             isDealer: false
         });
@@ -66,7 +77,7 @@ router.post('/:id/start', async (req, res) => {
 
         if (game.state !== "pre-deal") return res.status(400).json({ message: "Game already in progress" });
 
-        game = await resetAndStartGame(game);  // Use the helper function to start the game
+        game = await initiateFirstGame(game);  // Use the helper function to start the game
         
 
         for (let player of game.players) {
@@ -121,9 +132,7 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
                 const callAmount = parseInt(game.highestBet, 10) - parseInt(player.currentBet, 10);
                 player.chips -= callAmount;
                 player.currentBet += callAmount;
-                console.log(game.potAmount);
-                console.log(game.highestBet);
-                console.log(player.currentBet);
+
                 game.potAmount += callAmount;
                 break;
             case "fold":
@@ -143,7 +152,6 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
         if (indexToUpdate !== -1) {
             game.players[indexToUpdate] = player;
         }
-
 
         
         // Determine the next player's turn, skipping folded players and players who have already acted

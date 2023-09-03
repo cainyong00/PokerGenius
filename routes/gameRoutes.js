@@ -18,7 +18,8 @@ router.post('/create', async (req, res) => {
         
 
         await game.save();
-        res.json(game);
+        console.log(game._id);
+        res.json({ success: true, gameId: game._id });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: err.message });
@@ -27,6 +28,14 @@ router.post('/create', async (req, res) => {
 
 router.post('/:id/join', async (req, res) => {
     try {
+        const gameId = req.params.id;
+        console.log("Received request to join with data:", req.body);
+
+
+        if (!mongoose.Types.ObjectId.isValid(gameId)) {
+            return res.status(400).send('Invalid Game ID');
+        }
+
         const game = await Game.findById(req.params.id).populate('players');
         if (!game) return res.status(404).json({ message: "Game not found" });
 
@@ -34,16 +43,18 @@ router.post('/:id/join', async (req, res) => {
         if (!req.body.name || req.body.name.length == 0) {
             return res.status(400).json({ error: 'invalid name' });
         }
+        if (game.players.some(p => p.name === req.body.name)) {
+            return res.status(400).json({ error: 'Player with this name is already in the game.' });
+        }
         
         // Retrieve occupied positions
         const occupiedPositions = game.players.map(player => player.position);
+        const desiredPosition = req.body.position;
 
-
-        // Find the first unoccupied position from 1 to 8
-        let assignedPosition = 1;
-        while (occupiedPositions.includes(assignedPosition)) {
-            assignedPosition++;
+        if (occupiedPositions.includes(desiredPosition)) {
+            return res.status(400).json({ error: 'This seat is already occupied.' });
         }
+        // Find the first unoccupied position from 1 to 8
 
         const player = new Player({
             name: req.body.name,
@@ -52,7 +63,7 @@ router.post('/:id/join', async (req, res) => {
             currentBet: 0,
             folded: false,
             hasActed: false,
-            position: assignedPosition,
+            position: desiredPosition,
             lastAction: "none",
             isDealer: false
         });
@@ -66,6 +77,10 @@ router.post('/:id/join', async (req, res) => {
 
         await player.save();
         await game.save();
+
+        // Emit an event to update all clients about the new player
+        req.io.emit('playerJoined', { gameId: game._id, player });
+        console.log('Emitted playerJoined event for game:', game._id);
         res.json(player);
     } catch (err) {
         console.error(err);
@@ -75,6 +90,11 @@ router.post('/:id/join', async (req, res) => {
 
 router.post('/:id/start', async (req, res) => {
     try {
+        const gameId = req.params.id;
+
+        if (!mongoose.Types.ObjectId.isValid(gameId)) {
+            return res.status(400).send('Invalid Game ID');
+        }
         let game = await Game.findById(req.params.id).populate('players');
         if (!game || game.players.length < 2) return res.status(400).json({ message: "Game not found or not enough players" });
 
@@ -101,6 +121,12 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
     const session = await mongoose.startSession(); // Initialize the session
     session.startTransaction();  // Start a transaction
     try {
+        const gameId = req.params.id;
+
+        if (!mongoose.Types.ObjectId.isValid(gameId)) {
+            return res.status(400).send('Invalid Game ID');
+        }
+
         let game = await Game.findById(req.params.gameId).populate('players');
         let player = await Player.findById(req.params.playerId);
         const { advanceGame } = require('../utils/pokerLogic');
@@ -200,6 +226,8 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
         await session.commitTransaction();
         session.endSession();
         
+        req.io.emit('gameUpdated', { gameId: game._id, game });
+
 
         res.json(game);
     } catch (err) {
@@ -217,6 +245,12 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
     try {
+        const gameId = req.params.id;
+        console.log(gameId);
+        if (!mongoose.Types.ObjectId.isValid(gameId)) {
+            return res.status(400).send('Invalid Game ID');
+        }
+
         const game = await Game.findById(req.params.id).populate('players');
         if (!game) return res.status(404).json({ message: "Game not found" });
         res.json(game);

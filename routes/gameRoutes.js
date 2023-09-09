@@ -93,13 +93,20 @@ router.post('/:id/start', async (req, res) => {
         const gameId = req.params.id;
 
         if (!mongoose.Types.ObjectId.isValid(gameId)) {
+            console.log("TEST1")
             return res.status(400).send('Invalid Game ID');
         }
         let game = await Game.findById(req.params.id).populate('players');
-        if (!game || game.players.length < 2) return res.status(400).json({ message: "Game not found or not enough players" });
+        console.log(game);
 
-        if (game.state !== "pre-deal") return res.status(400).json({ message: "Game already in progress" });
-
+        if (!game || game.players.length < 2) {
+            console.log("TEST2")
+            return res.status(400).json({ message: "Game not found or not enough players" });
+        }
+        if (game.state !== "pre-deal"){
+            console.log("TEST3")
+            return res.status(400).json({ message: "Game already in progress" });
+        } 
         game = await initiateFirstGame(game);  // Use the helper function to start the game
         
 
@@ -108,7 +115,8 @@ router.post('/:id/start', async (req, res) => {
         }
         
         await game.save();
-        
+        req.io.emit('gameUpdated', { gameId: game._id, game });
+
         res.json(game);
     } catch (err) {
         console.error(err);
@@ -121,8 +129,7 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
     const session = await mongoose.startSession(); // Initialize the session
     session.startTransaction();  // Start a transaction
     try {
-        const gameId = req.params.id;
-
+        const gameId = req.params.gameId;
         if (!mongoose.Types.ObjectId.isValid(gameId)) {
             return res.status(400).send('Invalid Game ID');
         }

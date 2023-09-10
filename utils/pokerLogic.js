@@ -70,8 +70,9 @@ async function advanceGame(game) {
         game.players.forEach(p => {
             p.hasActed = false;
             p.lastAction = "none";
-            p.highestBet = 0;
+            p.currentBet = 0;
         });
+        game.highestBet = 0;
     } else {
         // If we're not advancing the game, move to the next player
         game = moveToNextPlayer(game);

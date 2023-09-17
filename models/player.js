@@ -19,7 +19,21 @@ const playerSchema = new mongoose.Schema({
         min: 1, 
         max: 8, 
         required: true 
-    }
+    },
+    transactions: [{
+        type: {
+            type: String,
+            enum: ['buy-in', 'buy-out', 'profit/loss']
+        },
+        amount: {
+            type: Number,
+            required: true
+        },
+        date: {
+            type: Date,
+            default: Date.now
+        }
+    }]
 });
 
 module.exports = mongoose.model('Player', playerSchema);

@@ -229,8 +229,8 @@ const resetAndStartGame = async (game) => {
     deck, game.players = await dealCards(deck, game.players);
     game.deck = deck;
     // Deduct blinds and set the current bet for the small and big blinds
-    const smallBlindAmount = 10;
-    const bigBlindAmount = 20;
+    const smallBlindAmount = game.smallBlind;
+    const bigBlindAmount = game.bigBlind;
 
     game.players.forEach(p => {
         p.currentBet = 0;
@@ -282,8 +282,8 @@ const initiateFirstGame = async (game) => {
     game.deck = deck;
     
     // Deduct blinds and set the current bet for the small and big blinds
-    const smallBlindAmount = 10;
-    const bigBlindAmount = 20;
+    const smallBlindAmount = game.smallBlind;
+    const bigBlindAmount = game.bigBlind;
 
     game.players[smallBlindIndex].chips -= smallBlindAmount;
     game.players[smallBlindIndex].currentBet = smallBlindAmount;

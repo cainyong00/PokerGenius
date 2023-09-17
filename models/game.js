@@ -16,7 +16,14 @@ const gameSchema = new mongoose.Schema({
         ref: 'Player',
         required: false
     },
-    
+    smallBlind: {
+        type: Number,
+        required: true  // We're making it required assuming you always want it specified; change as per your requirements
+    },
+    bigBlind: {
+        type: Number,
+        required: true  // Same here, change if necessary
+    }
 });
 
 module.exports = mongoose.model('Game', gameSchema);

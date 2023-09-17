@@ -9,11 +9,19 @@ const mongoose = require('mongoose');
 
 router.post('/create', async (req, res) => {
     try {
+        const { smallBlind, bigBlind } = req.body;
+
+        if (!smallBlind || !bigBlind) {
+            return res.status(400).json({ message: 'Please provide smallBlind and bigBlind values.' });
+        }
+
         const game = new Game({
             state: "pre-deal",
             communityCards: [],
             potAmount: 0,
-            players: []
+            players: [],
+            smallBlind, 
+            bigBlind
         });
         
 
@@ -56,9 +64,11 @@ router.post('/:id/join', async (req, res) => {
         }
         // Find the first unoccupied position from 1 to 8
 
+        const desiredChips = req.body.chips || 1000; // Default to 1000 if not provided
+
         const player = new Player({
             name: req.body.name,
-            chips: 1000,
+            chips: desiredChips,
             cards: [],
             currentBet: 0,
             folded: false,
@@ -93,18 +103,15 @@ router.post('/:id/start', async (req, res) => {
         const gameId = req.params.id;
 
         if (!mongoose.Types.ObjectId.isValid(gameId)) {
-            console.log("TEST1")
             return res.status(400).send('Invalid Game ID');
         }
         let game = await Game.findById(req.params.id).populate('players');
         console.log(game);
 
         if (!game || game.players.length < 2) {
-            console.log("TEST2")
             return res.status(400).json({ message: "Game not found or not enough players" });
         }
         if (game.state !== "pre-deal"){
-            console.log("TEST3")
             return res.status(400).json({ message: "Game already in progress" });
         } 
         game = await initiateFirstGame(game);  // Use the helper function to start the game

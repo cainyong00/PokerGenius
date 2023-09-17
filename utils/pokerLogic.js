@@ -108,6 +108,7 @@ async function determineWinner(game) {
         const splitAmount = game.potAmount / winners.length;
         winners.forEach(winner => {
             winner.chips += splitAmount;
+            winner.currentStack = winner.chips;
             console.log(`${winner.name} won a split pot of ${splitAmount}`);
         });
         game = await resetAndStartGame(game);
@@ -255,6 +256,8 @@ const resetAndStartGame = async (game) => {
         p.lastAction = "none";
         p.folded = false;  // Ensure all players are marked as not folded for the new game
         p.isAllIn = false; // Reset all-in status for each player
+        p.currentStack = p.chips;
+
     });
 
     game.state = "pre-flop";
@@ -302,6 +305,8 @@ const initiateFirstGame = async (game) => {
         p.lastAction = "none";
         p.folded = false;  // Ensure all players are marked as not folded for the new game
         p.isAllIn = false; // Reset all-in status for each player
+        p.currentStack = p.chips;
+
     });
 
     game.state = "pre-flop";

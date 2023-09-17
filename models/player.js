@@ -20,20 +20,16 @@ const playerSchema = new mongoose.Schema({
         max: 8, 
         required: true 
     },
-    transactions: [{
-        type: {
-            type: String,
-            enum: ['buy-in', 'buy-out', 'profit/loss']
-        },
-        amount: {
-            type: Number,
-            required: true
-        },
-        date: {
-            type: Date,
-            default: Date.now
-        }
-    }]
+    buyIn: { type: Number, default: 0 },
+    buyOut: { type: Number, default: 0 },
+    currentStack: { type: Number, default: 0 },
+    netProfitLoss: { type: Number }
 });
+
+playerSchema.pre('save', function(next) {
+    this.netProfitLoss = this.currentStack + this.buyOut - this.buyIn;
+    next();
+});
+
 
 module.exports = mongoose.model('Player', playerSchema);

@@ -85,6 +85,12 @@ router.post('/:id/join', async (req, res) => {
         game.players.push(player._id);
         if (game.players.length === 1) game.currentPlayerTurn = player._id;
 
+
+        player.buyIn += desiredChips;
+        player.currentStack += desiredChips;
+        game.totalBuyIn += desiredChips;
+        game.totalCurrentStack += desiredChips;
+
         await player.save();
         await game.save();
 
@@ -172,10 +178,6 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
         }
 
         if (action === "raise" && amount < (game.highestBet * 2)) {
-            console.log("TEST");
-            console.log(`Amount: ${amount}`);
-            console.log(`Highest Bet: ${game.highestBet}`);
-
             return res.status(400).json({ error: 'You need to raise at least twice the current highest bet' });
         }
 
@@ -188,6 +190,7 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
             case "raise":
                 player.chips -= amount;
                 player.currentBet += amount;
+                player.currentStack = player.chips;
                 game.potAmount += amount;
                 game.highestBet = player.currentBet;
                 break;
@@ -195,6 +198,7 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
                 const callAmount = parseInt(game.highestBet, 10) - parseInt(player.currentBet, 10);
                 player.chips -= callAmount;
                 player.currentBet += callAmount;
+                player.currentStack = player.chips;
 
                 game.potAmount += callAmount;
                 break;
@@ -210,7 +214,6 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
 
         player.hasActed = true;
         player.lastAction = action;
-        
         const indexToUpdate = game.players.findIndex(p => p._id.toString() === player._id.toString());
         if (indexToUpdate !== -1) {
             game.players[indexToUpdate] = player;

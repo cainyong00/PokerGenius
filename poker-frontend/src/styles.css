@@ -1,0 +1,341 @@
+/* styles.css */
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #222;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.poker-table {
+    width: 60vw;
+    height: 35vw;
+    background-color: #0a3d0e;
+    border-radius: 50%;
+    position: relative;
+}
+
+.seats > * {
+    position: absolute;
+    transform: translate(-50%, -50%);
+}
+
+.seats > *:nth-child(1) {
+    top: -3%;
+    left: 50%;
+}
+
+.seats > *:nth-child(2) {
+    top: 19%;
+    left: 93%;
+}
+
+.seats > *:nth-child(3) {
+    top: 50%;
+    left: 103%;
+}
+
+.seats > *:nth-child(4) {
+    top: 81%;
+    left: 93%;
+}
+
+.seats > *:nth-child(5) {
+    bottom: -20%;
+    left: 50%;
+}
+
+.seats > *:nth-child(6) {
+    top: 81%;
+    left: 7%;
+}
+
+.seats > *:nth-child(7) {
+    bottom: 50%;
+    left: -3%;
+}
+
+.seats > *:nth-child(8) {
+    top: 19%;
+    left: 7%;
+}
+
+
+
+
+.start-game-button {
+    position: absolute;
+    bottom: -15%;
+    right: -25%;
+    background-color: #084606;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.player-cards {
+    position: absolute;
+    bottom: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px; /* space between cards */
+}
+
+.action-buttons {
+    position: absolute;
+    bottom: -10%;  /* You may need to adjust this due to increased button size */
+    right: -25%;   /* You may need to adjust this due to increased button size */
+    display: flex;
+    flex-wrap: wrap; /* Allow buttons to wrap to the next line if not enough space */
+    gap: 10px;     /* space between buttons */
+}
+
+.action-buttons button {
+    font-size: 1.2em;            /* Increase font size */
+    padding: 10px 20px;          /* Add more padding */
+    border-radius: 5px;          /* Rounded corners */
+    transition: background-color 0.3s; /* Smooth color transition on hover */
+}
+
+.action-buttons button:hover {
+    background-color: #f1f1f1;   /* Slight background change on hover */
+}
+
+.action-buttons button:focus {
+    outline: none;               /* Remove the default outline */
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Add a subtle shadow for focus */
+}
+
+.action-buttons button:active {
+    background-color: #ddd;     /* Darker background when button is pressed */
+}
+
+/* Specific style for the Fold button */
+.action-buttons button.fold-button {
+    background-color: red;
+    color: white;
+}
+
+.action-buttons button.fold-button:hover {
+    background-color: darkred;
+}
+
+
+.card {
+    /* Any styling specific for individual cards */
+    padding: 10px;
+    border: 1px solid white;
+    border-radius: 5px;
+}
+
+.pot-display {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    font-weight: bold;
+    color: gold; /* Using gold color to make pot amount pop out */
+    background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent black background */
+    padding: 5px 15px;
+    border-radius: 10px;
+}
+.player-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.player-name {
+    background: #f2f2f2;  /* Light gray background */
+    border-radius: 4px;  /* Slight rounding */
+    color: #333;  /* Dark gray text for contrast */
+    padding: 6px 12px;  /* Some spacing around the text */
+    font-weight: bold;  /* Bold text */
+    font-size: 16px;
+    text-align: center;
+    height: auto; /* Ensure the container wraps the text appropriately */
+    margin: 4px 0; /* Some space between the player's name and the other elements */
+}
+
+
+
+.player-stack {
+    font-size: 14px;
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 2px 5px;
+    border-radius: 10px;
+}
+
+.dealer-chip {
+    font-size: 14px;
+    color: #fff;
+    background-color: #FFD700;  /* Gold color for the Dealer label */
+    padding: 2px 8px;           /* Adjust padding to fit the word "Dealer" */
+    border-radius: 4px;
+    margin-top: 5px;
+}
+@keyframes pulse {
+    0% { 
+        transform: translate(-50%, -50%) scale(1); 
+    }
+    50% { 
+        transform: translate(-50%, -50%) scale(1.05); 
+    }
+    100% { 
+        transform: translate(-50%, -50%) scale(1); 
+    }
+}
+
+.player-turn {
+    animation: pulse 1.5s infinite; /* pulsing animation */
+    box-shadow: 0 0 20px 5px gold;  /* glowing outline */
+}
+.error-message {
+    margin-bottom: 10px;
+    color: red;
+    font-weight: bold;
+}
+
+/* ... Existing styles ... */
+
+
+.action-wrapper {
+    position: absolute;
+    bottom: -10%;
+    right: -25%;
+    display: flex;
+    flex-direction: column;  /* Make sure contents stack vertically */
+    align-items: center;
+    gap: 10px;
+}
+
+/* The Modal (background) */
+.errorModal {
+    display: flex; /* Display it flex so the content can be centered */
+    position: fixed; /* Stay in place */
+    z-index: 10000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    background-color: rgba(0,0,0,0.7); /* Semi-opaque black */
+    justify-content: center; /* Center content horizontally */
+    align-items: center; /* Center content vertically */
+}
+
+/* Modal Content */
+.modal-content {
+    background-color: #fefefe;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 400px; /* Maximum width of 400px */
+    color: black;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Shadow for depth */
+}
+
+/* The Close Button */
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    background: none;
+    border: none;
+    outline: none;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: black;
+}
+
+.ledger-modal {
+    z-index: 1000;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;  /* take up 80% of the viewport width */
+    max-width: 600px;  /* but not more than 600 pixels wide */
+    height: 70%; /* fixed height */
+    overflow-y: auto;  /* add scroll if content exceeds modal height */
+    background-color: #2a3d45;  /* dark gray-blue */
+    color: #e5e5e5;  /* light gray */
+    border-radius: 5px; 
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);  /* subtle shadow for depth */
+    padding: 20px;
+}
+
+.ledger-modal table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ledger-modal th, .ledger-modal td {
+    padding: 12px;
+    border-bottom: 1px solid #3a4d60;  /* subtle separator */
+    text-align: left;  /* align text to the left */
+}
+
+.ledger-modal th {
+    background-color: #23343b;  /* darker shade for headers */
+    color: #d1d1d1;  /* darker text color for headers */
+}
+
+.ledger-modal button {
+    position: absolute;
+    bottom: 10px;  /* position at the bottom */
+    right: 10px;  /* with a little space to the right side */
+    background-color: #4a6785;  /* bluish button background */
+    color: #ffffff;  /* white text */
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.ledger-modal button:hover {
+    background-color: #3a4d60;  /* darken on hover */
+}
+
+
+.ledger-button {
+    position: absolute;
+    bottom: -60px;
+    left: -250px;
+    padding: 10px 15px;
+    background: #f8f8f8;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+
+}
+
+/* General styles for facedown cards */
+.facedown-cards {
+    position: absolute;
+    display: flex;
+    gap: 5px;
+}
+
+/* Specific positions based on seat */
+.facedown-cards-1 { top: 10%; left: 45%; } /* top center */
+.facedown-cards-2 { top: 10%; right: 10%; } /* top right */
+.facedown-cards-3 { top: 45%; right: 10%; } /* middle right */
+.facedown-cards-4 { bottom: 10%; right: 10%; } /* bottom right */
+.facedown-cards-5 { bottom: 10%; left: 45%; } /* bottom center */
+.facedown-cards-6 { bottom: 10%; left: 10%; } /* bottom left */
+.facedown-cards-7 { top: 45%; left: 10%; } /* middle left */
+.facedown-cards-8 { top: 10%; left: 10%; } /* top left */

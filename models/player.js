@@ -23,7 +23,13 @@ const playerSchema = new mongoose.Schema({
     buyIn: { type: Number, default: 0 },
     buyOut: { type: Number, default: 0 },
     currentStack: { type: Number, default: 0 },
-    netProfitLoss: { type: Number }
+    netProfitLoss: { type: Number },
+    inHand: Boolean,
+    handsPlayed: { type: Number, default: 0 },
+    handsVoluntarilyPutMoney: { type: Number, default: 0 },
+    bets: { type: Number, default: 0 },
+    raises: { type: Number, default: 0 },
+    calls: { type: Number, default: 0 },
 });
 
 playerSchema.pre('save', function(next) {

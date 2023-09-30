@@ -75,7 +75,8 @@ router.post('/:id/join', async (req, res) => {
             hasActed: false,
             position: desiredPosition,
             lastAction: "none",
-            isDealer: false
+            isDealer: false,
+            inHand: false
         });
         if (game.players.length === 0) {
             player.isDealer = true;
@@ -124,6 +125,7 @@ router.post('/:id/start', async (req, res) => {
         
 
         for (let player of game.players) {
+            player.inHand = true;
             await player.save();
         }
         
@@ -195,7 +197,10 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
                 game.highestBet = player.currentBet;
                 break;
             case "call":
+                console.log((game.highestBet));
+                console.log(player.currentBet);
                 const callAmount = parseInt(game.highestBet, 10) - parseInt(player.currentBet, 10);
+                
                 player.chips -= callAmount;
                 player.currentBet += callAmount;
                 player.currentStack = player.chips;
@@ -204,6 +209,7 @@ router.post('/:gameId/player/:playerId/action', async (req, res) => {
                 break;
             case "fold":
                 player.folded = true;
+                player.inHand = false;
                 break;
             case "check":
                 // Do nothing

@@ -1,6 +1,8 @@
 # PokerGenius
 Poker Genius is an online poker platform that offers seamless gameplay, intuitive interfaces, and real-time interactions.
 
+Currently not hosted on a server.
+
 Primarily focused on Texas Hold'em style poker. 
 ![p1](https://github.com/cainyong00/PokerGenius/assets/112453688/98afc1c5-e334-443e-9a25-d38b2b4fcb4a)
 
